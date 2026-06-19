@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Toka · 滴答清单 Agent",
+        "title": "Toka · 用说的，管清单",
         "width": 1200,
         "height": 800,
         "minWidth": 900,

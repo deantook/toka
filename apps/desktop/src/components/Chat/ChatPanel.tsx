@@ -87,9 +87,20 @@ export function ChatPanel({
       <div className="flex-1 overflow-y-auto min-h-0">
         <div className="max-w-2xl mx-auto px-5 py-6">
           {messages.length === 0 && (
-            <p className="text-[#bbb] text-[13px]">
-              {configReady ? "输入内容，或选择下方快捷操作" : "完成配置后即可使用"}
-            </p>
+            <div className="text-[13px]">
+              {configReady ? (
+                <>
+                  <p className="text-[#1c1c1a] font-medium">
+                    说出今天的事，我来帮你理清、安排、复盘
+                  </p>
+                  <p className="text-[#bbb] mt-2">
+                    输入内容，或选择下方快捷操作
+                  </p>
+                </>
+              ) : (
+                <p className="text-[#bbb]">完成配置后即可使用</p>
+              )}
+            </div>
           )}
 
           <div className="space-y-6">
