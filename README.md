@@ -93,14 +93,7 @@ curl -s http://127.0.0.1:17200/health || echo "sidecar not running (ok if not st
 
 ## 发布
 
-推送版本标签后，GitHub Actions 会自动构建 macOS（Apple Silicon / Intel）与 Windows 安装包，并创建 **Draft Release**。
-
-```bash
-# 1. 更新版本号（package.json、tauri.conf.json、Cargo.toml 保持一致）
-# 2. 提交并打标签
-git tag v0.1.0
-git push origin v0.1.0
-```
+推送到 `main` 分支后，GitHub Actions 会自动构建 macOS（Apple Silicon / Intel）与 Windows 安装包，并更新对应版本的 GitHub Release（版本号取自 `tauri.conf.json`）。
 
 也可在 GitHub 仓库 **Actions → Release → Run workflow** 手动触发。
 
@@ -112,4 +105,4 @@ git push origin v0.1.0
 | macOS (Intel) | `.dmg`、`.app.tar.gz` |
 | Windows | `.msi`、`.exe` |
 
-Release 默认为草稿，请在 GitHub Releases 页面检查后发布。可选配置代码签名 Secrets（见 `.github/workflows/release.yml` 注释）。
+安装包未做代码签名：macOS 首次打开需在 **系统设置 → 隐私与安全性** 中允许；Windows 可能弹出 SmartScreen 提示。

@@ -2,8 +2,8 @@ name: Release
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
   workflow_dispatch:
 
 concurrency:
@@ -65,18 +65,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_TARGET: ${{ matrix.target }}
-          # macOS 代码签名（可选，在仓库 Settings → Secrets 中配置）
-          # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          # APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          # Windows 代码签名（可选）
-          # TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          # TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # 无开发者证书，跳过 macOS 代码签名
+          APPLE_SIGNING_IDENTITY: "-"
         with:
           projectPath: apps/desktop
-          tagName: ${{ github.ref_name }}
-          releaseName: Toka ${{ github.ref_name }}
+          tagName: v__VERSION__
+          releaseName: Toka v__VERSION__
           releaseBody: |
+            自动构建自 `main` @ ${{ github.sha }}
+
             ## 安装包
 
             | 平台 | 文件 |
@@ -86,6 +83,8 @@ jobs:
             | Windows | `.msi` / `.exe` |
 
             首次使用前请在应用内 **设置** 页配置滴答 Token 与 LLM API。
-          releaseDraft: true
+
+            > 安装包未做代码签名。macOS 首次打开需在 **系统设置 → 隐私与安全性** 中允许；Windows 可能弹出 SmartScreen 提示，选择「仍要运行」即可。
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
