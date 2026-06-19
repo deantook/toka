@@ -1,0 +1,13 @@
+{
+  "name": "toka",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter @toka/desktop tauri dev",
+    "build": "pnpm --filter @toka/desktop build",
+    "agent:dev": "pnpm --filter @toka/agent-runtime dev",
+    "agent:build": "pnpm --filter @toka/agent-core build && pnpm --filter @toka/agent-roles build && pnpm --filter @toka/agent-runtime build",
+    "test": "pnpm --filter @toka/agent-core test && pnpm --filter @toka/agent-runtime test"
+  }
+}
