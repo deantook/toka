@@ -6,7 +6,7 @@
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1430",
-    "beforeBuildCommand": "pnpm agent:bundle && pnpm --filter @toka/desktop build",
+    "beforeBuildCommand": "pnpm -w agent:bundle && pnpm --filter @toka/desktop build",
     "frontendDist": "../dist"
   },
   "app": {
