@@ -8,6 +8,7 @@ import type {
   SseEvent,
 } from "../types";
 import { DEFAULT_AGENT_URL } from "../types";
+import { DIDA365_TOKEN_HELP_TEXT } from "../constants/dida365";
 
 const CURRENT_SESSION_KEY = "toka:current-session";
 
@@ -306,7 +307,7 @@ export function useAgent({ debugMode, hasDidaToken, hasLlmKey }: UseAgentOptions
 
   const configMissingMessage = (): string | null => {
     if (!hasDidaToken) {
-      return "尚未配置滴答清单 Token。请前往「设置」填写（格式 dp_...，可在滴答清单 → 设置 → 开发者中获取）";
+      return `尚未配置滴答清单 Token。请前往「设置」填写（格式 dp_...，${DIDA365_TOKEN_HELP_TEXT}中获取）`;
     }
     if (!hasLlmKey) {
       return "尚未配置 LLM API Key。请前往「设置」填写后再试";

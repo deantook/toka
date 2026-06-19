@@ -1,3 +1,10 @@
+import {
+  DIDA365_SETTINGS_LINK_TEXT,
+  DIDA365_SETTINGS_URL,
+  DIDA365_TOKEN_FORMAT,
+  DIDA365_TOKEN_HELP_PATH,
+} from "../../constants/dida365";
+
 interface SettingsPanelProps {
   llmApiKey: string;
   setLlmApiKey: (v: string) => void;
@@ -97,9 +104,21 @@ export function SettingsPanel({
             type="text"
             value={dida365Token}
             onChange={(e) => setDida365Token(e.target.value)}
-            placeholder="dp_..."
+            placeholder={DIDA365_TOKEN_FORMAT}
             className="field-input font-mono"
           />
+          <p className="text-[11px] text-[#8a8a86] mt-1.5 leading-relaxed">
+            请在浏览器中打开{" "}
+            <a
+              href={DIDA365_SETTINGS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 hover:text-[#5c5c58]"
+            >
+              {DIDA365_SETTINGS_LINK_TEXT}
+            </a>
+            ，进入「{DIDA365_TOKEN_HELP_PATH}」，复制 API 口令（格式 {DIDA365_TOKEN_FORMAT}）粘贴到此处。
+          </p>
         </Field>
 
         <label className="flex items-center gap-2.5 cursor-pointer pt-1">

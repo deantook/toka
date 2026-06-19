@@ -1,4 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import {
+  DIDA365_SETTINGS_LINK_TEXT,
+  DIDA365_SETTINGS_URL,
+  DIDA365_TOKEN_FORMAT,
+  DIDA365_TOKEN_HELP_PATH,
+} from "../../constants/dida365";
 import type { ChatMessage } from "../../types";
 import { MarkdownContent } from "./MarkdownContent";
 import { ToolTrace } from "./ToolTrace";
@@ -58,8 +64,20 @@ export function ChatPanel({
   const configHint = missingDidaToken
     ? {
         title: "尚未配置滴答 Token",
-        detail:
-          "请在设置中填写 Token（格式 dp_...，滴答清单 → 设置 → 开发者）。",
+        detail: (
+          <>
+            请在设置中填写 Token（格式 {DIDA365_TOKEN_FORMAT}）。请在浏览器中打开{" "}
+            <a
+              href={DIDA365_SETTINGS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 hover:text-[#5c4a2a]"
+            >
+              {DIDA365_SETTINGS_LINK_TEXT}
+            </a>
+            ，进入「{DIDA365_TOKEN_HELP_PATH}」获取 API 口令。
+          </>
+        ),
       }
     : missingLlmKey
       ? {

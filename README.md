@@ -14,8 +14,8 @@ Toka 是一款基于 Tauri 的滴答清单桌面应用——**用说的，管清
 
 ### 滴答 Token
 
-1. 登录 [滴答清单](https://dida365.com)，进入 **设置 → 开发者**（或开发者设置）。
-2. 创建或复制 API Token，格式为 `dp_...`。
+1. 在浏览器中打开 [滴答清单网页版](https://dida365.com/webapp/#q/all/tasks?modalType=settings)，进入 **设置 → 账户与安全 → API 口令管理**。
+2. 创建或复制 API 口令，格式为 `dp_...`。
 3. 在 Toka 设置页的 **滴答 Token** 字段粘贴该 Token。
 
 Sidecar 环境变量：`DIDA365_TOKEN`（可选 `DIDA365_MCP_URL`，默认 `https://mcp.dida365.com`）。

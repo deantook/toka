@@ -82,7 +82,7 @@ jobs:
             | macOS (Intel) | `.dmg` / `.app.tar.gz`（`x86_64`） |
             | Windows | `.msi` / `.exe` |
 
-            首次使用前请在应用内 **设置** 页配置滴答 Token 与 LLM API。
+            首次使用前请在应用内 **设置** 页配置滴答 Token 与 LLM API。Token 请在浏览器中打开 [滴答清单网页版](https://dida365.com/webapp/#q/all/tasks?modalType=settings) → **账户与安全 → API 口令管理** 获取。
 
             > 安装包未做代码签名。macOS 首次打开需在 **系统设置 → 隐私与安全性** 中允许；Windows 可能弹出 SmartScreen 提示，选择「仍要运行」即可。
           releaseDraft: false

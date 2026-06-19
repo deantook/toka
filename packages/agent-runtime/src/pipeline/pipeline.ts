@@ -58,7 +58,7 @@ export class AgentPipeline {
         onEvent({
           type: "error",
           message:
-            "尚未配置滴答清单 Token。请前往「设置」填写 Token（格式 dp_...，可在滴答清单 → 设置 → 开发者中获取）",
+            "尚未配置滴答清单 Token。请前往「设置」填写 Token（格式 dp_...，在浏览器中打开滴答清单 → 设置 → 账户与安全 → API 口令管理中获取）",
         });
         return;
       }

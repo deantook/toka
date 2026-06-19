@@ -43,7 +43,7 @@ export class Dida365McpClient {
     const token = this.normalizedToken();
     if (!token) {
       throw new Error(
-        "未配置滴答清单 Token。请在设置中填写 Token（格式 dp_...，可在滴答开发者设置中获取）",
+        "未配置滴答清单 Token。请在设置中填写 Token（格式 dp_...，在浏览器中打开滴答清单 → 设置 → 账户与安全 → API 口令管理中获取）",
       );
     }
 
