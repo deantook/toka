@@ -23,6 +23,24 @@ export function addLocalDays(date: Date, days: number): Date {
   return d;
 }
 
+/** Start of the calendar day as ISO 8601 with Asia/Shanghai offset */
+export function toLocalDayStartISO(
+  date: Date,
+  timeZone = DEFAULT_TIMEZONE,
+): string {
+  const ymd = localDateString(date);
+  const offset = timeZone === "Asia/Shanghai" ? "+08:00" : "Z";
+  return `${ymd}T00:00:00${offset}`;
+}
+
+/** Exclusive end boundary for a calendar day query */
+export function toLocalDayEndExclusiveISO(
+  date: Date,
+  timeZone = DEFAULT_TIMEZONE,
+): string {
+  return toLocalDayStartISO(addLocalDays(date, 1), timeZone);
+}
+
 export function resolveDateRangeFromMessage(msg: string): {
   start: Date;
   end: Date;

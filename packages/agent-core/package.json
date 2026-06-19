@@ -10,7 +10,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "tsx src/test/datetime.test.ts"
+    "test": "tsx src/test/datetime.test.ts && tsx src/test/context.test.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.0"
