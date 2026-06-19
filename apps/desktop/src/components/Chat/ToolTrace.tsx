@@ -19,31 +19,31 @@ export function ToolTrace({ toolCalls, defaultOpen = false }: Props) {
         return (
           <details
             key={`${tc.name}-${j}`}
-            className="rounded-lg border border-slate-200/80 bg-slate-50/80 text-xs"
+            className="border border-[#e8e8e4] bg-[#fafaf8] text-[11px]"
             open={defaultOpen}
           >
             <summary className="cursor-pointer px-2.5 py-1.5 flex items-center gap-2">
-              <span className="px-1 py-0.5 rounded text-[10px] font-semibold bg-slate-200 text-slate-600">
+              <span className="px-1 py-0.5 text-[10px] font-medium text-[#5c5c58] bg-[#f0f0ec] border border-[#dcdcd8]">
                 工具
               </span>
-              <span className="font-medium text-slate-700">{tc.name}</span>
+              <span className="text-[#3d3d3a]">{tc.name}</span>
               {hasResult && (
-                <span className="text-[10px] text-emerald-600">已完成</span>
+                <span className="text-[10px] text-[#8a8a86]">已完成</span>
               )}
             </summary>
-            <div className="px-2.5 pb-2 space-y-1.5 border-t border-slate-200/60 pt-1.5">
+            <div className="px-2.5 pb-2 space-y-1.5 border-t border-[#e8e8e4] pt-1.5">
               {tc.args && (
                 <div>
-                  <p className="text-[10px] text-slate-500 mb-0.5">参数</p>
-                  <pre className="overflow-x-auto text-[10px] whitespace-pre-wrap text-slate-600">
+                  <p className="text-[10px] text-[#8a8a86] mb-0.5">参数</p>
+                  <pre className="overflow-x-auto text-[10px] font-mono whitespace-pre-wrap text-[#3d3d3a] bg-white border border-[#e8e8e4] px-2 py-1">
                     {JSON.stringify(tc.args, null, 2)}
                   </pre>
                 </div>
               )}
               {hasResult && (
                 <div>
-                  <p className="text-[10px] text-slate-500 mb-0.5">结果</p>
-                  <pre className="overflow-x-auto text-[10px] max-h-32 whitespace-pre-wrap text-slate-600">
+                  <p className="text-[10px] text-[#8a8a86] mb-0.5">结果</p>
+                  <pre className="overflow-x-auto text-[10px] font-mono max-h-32 whitespace-pre-wrap text-[#3d3d3a] bg-white border border-[#e8e8e4] px-2 py-1">
                     {JSON.stringify(tc.result, null, 2)}
                   </pre>
                 </div>

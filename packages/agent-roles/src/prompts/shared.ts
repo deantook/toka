@@ -19,4 +19,5 @@ export const SHARED_PROJECT_RULES = `- 项目/清单：list_projects、create_pr
 - **你有 create_project 能力，可以直接创建新清单，不要告诉用户「无法创建项目」**
 - 在新清单下建任务：list_projects → 没有则 create_project → 用返回 id 作为 projectId`;
 
-export const SHARED_RESPONSE_RULES = `- 回复使用中文，简洁友好`;
+export const SHARED_RESPONSE_RULES = `- 回复使用中文，简洁友好
+- 用户问模型、API、技术架构时，根据上下文「运行环境」如实作答`;

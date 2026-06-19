@@ -18,55 +18,85 @@ function getMcpCalls(events?: SseEvent[]): SseEvent[] {
   return events?.filter((e) => e.type === "mcp_call") ?? [];
 }
 
+function Label({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[11px] text-[#8a8a86] mb-1 uppercase tracking-wide">
+      {children}
+    </p>
+  );
+}
+
+function CodeBlock({
+  children,
+  maxHeight,
+}: {
+  children: string;
+  maxHeight?: string;
+}) {
+  return (
+    <pre
+      className={`whitespace-pre-wrap break-all text-[11px] font-mono text-[#3d3d3a] bg-white border border-[#e8e8e4] px-2 py-1.5 overflow-y-auto leading-relaxed ${
+        maxHeight ?? ""
+      }`}
+    >
+      {children}
+    </pre>
+  );
+}
+
 function McpCallBlock({ call }: { call: SseEvent }) {
   const failed = Boolean(call.error);
   return (
-    <details className="rounded border border-slate-600 bg-slate-900/60">
-      <summary className="cursor-pointer px-2 py-1.5 flex items-center gap-2 flex-wrap">
+    <details className="border border-[#e8e8e4] bg-white open:border-[#dcdcd8]">
+      <summary className="cursor-pointer px-2.5 py-2 flex items-center gap-2 flex-wrap text-[12px]">
         <span
-          className={`px-1 py-0.5 rounded text-[10px] font-semibold ${
-            failed ? "bg-red-500/20 text-red-300" : "bg-cyan-500/20 text-cyan-300"
+          className={`px-1 py-0.5 text-[10px] font-medium border ${
+            failed
+              ? "text-[#8b4513] bg-[#faf0e8] border-[#e8d4c4]"
+              : "text-[#5c5c58] bg-[#f0f0ec] border-[#dcdcd8]"
           }`}
         >
           MCP
         </span>
-        <span className="text-cyan-200">{call.name}</span>
+        <span className="text-[#1c1c1a]">{call.name}</span>
         {call.durationMs != null && (
-          <span className="text-slate-500">{call.durationMs}ms</span>
+          <span className="text-[#aaa]">{call.durationMs}ms</span>
         )}
-        {call.error && <span className="text-red-400 truncate">{call.error}</span>}
+        {call.error && (
+          <span className="text-[#8b4513] truncate">{call.error}</span>
+        )}
       </summary>
-      <div className="px-2 pb-2 space-y-2 border-t border-slate-700/50 pt-2">
+      <div className="px-2.5 pb-2.5 space-y-2 border-t border-[#e8e8e4] pt-2">
         {call.mcpUrl && (
           <div>
-            <p className="text-slate-500 mb-0.5">MCP URL</p>
-            <pre className="whitespace-pre-wrap break-all text-slate-400">{call.mcpUrl}</pre>
+            <Label>MCP URL</Label>
+            <CodeBlock>{call.mcpUrl}</CodeBlock>
           </div>
         )}
         {call.request && (
           <div>
-            <p className="text-slate-500 mb-0.5">Request</p>
-            <pre className="whitespace-pre-wrap break-all text-slate-300 max-h-32 overflow-y-auto">
+            <Label>Request</Label>
+            <CodeBlock maxHeight="max-h-32">
               {JSON.stringify(call.request, null, 2)}
-            </pre>
+            </CodeBlock>
           </div>
         )}
         {call.response && (
           <div>
-            <p className="text-slate-500 mb-0.5">Response (parsed)</p>
-            <pre className="whitespace-pre-wrap break-all text-slate-300 max-h-40 overflow-y-auto">
+            <Label>Response (parsed)</Label>
+            <CodeBlock maxHeight="max-h-40">
               {JSON.stringify(call.response.parsed, null, 2)}
-            </pre>
-            <p className="text-slate-500 mb-0.5 mt-2">Response (raw)</p>
-            <pre className="whitespace-pre-wrap break-all text-slate-400 max-h-32 overflow-y-auto">
+            </CodeBlock>
+            <Label>Response (raw)</Label>
+            <CodeBlock maxHeight="max-h-32">
               {JSON.stringify(call.response.raw, null, 2)}
-            </pre>
+            </CodeBlock>
           </div>
         )}
         {call.error && (
           <div>
-            <p className="text-red-400 mb-0.5">Error</p>
-            <pre className="whitespace-pre-wrap break-all text-red-300">{call.error}</pre>
+            <Label>Error</Label>
+            <CodeBlock>{call.error}</CodeBlock>
           </div>
         )}
       </div>
@@ -76,99 +106,102 @@ function McpCallBlock({ call }: { call: SseEvent }) {
 
 export function DebugLogPanel({ logs, onClear, onClose }: Props) {
   return (
-    <div className="flex flex-col h-full bg-slate-900 text-slate-100 rounded-xl border border-slate-700 shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-slate-700 bg-slate-800 shrink-0">
+    <div className="flex flex-col h-full bg-[#f0f0ec] text-[#1c1c1a] overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-[#e0e0dc] shrink-0 bg-[#f0f0ec]">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">
+          <span className="text-[10px] font-mono px-1.5 py-0.5 text-[#8a6d3b] bg-[#f5f0e1] border border-[#e8dfc8]">
             DEBUG
           </span>
-          <h2 className="text-sm font-semibold">请求日志</h2>
-          <span className="text-xs text-slate-400">({logs.length})</span>
+          <h2 className="text-[13px] font-medium text-[#1c1c1a]">请求日志</h2>
+          <span className="text-[11px] text-[#aaa]">({logs.length})</span>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <button
             type="button"
             onClick={onClear}
-            className="text-xs text-slate-400 hover:text-slate-200"
+            className="text-[12px] text-[#aaa] hover:text-[#5c5c58] transition-colors"
           >
-            清空日志
+            清空
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="text-xs text-slate-400 hover:text-slate-200"
+            className="text-[12px] text-[#aaa] hover:text-[#5c5c58] transition-colors"
           >
-            退出调试
+            关闭
           </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0 font-mono text-xs">
+      <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0">
         {logs.length === 0 && (
-          <p className="text-slate-500 text-center py-6">暂无请求，发送消息后将在此记录</p>
+          <p className="text-[#bbb] text-[12px] text-center py-8">
+            暂无请求，发送消息后将在此记录
+          </p>
         )}
         {logs.map((log) => {
           const mcpCalls = getMcpCalls(log.sseEvents);
           const otherEvents =
             log.sseEvents?.filter((e) => e.type !== "mcp_call") ?? [];
+          const failed = Boolean(log.error || (log.status && log.status >= 400));
 
           return (
             <details
               key={log.id}
-              className="rounded-lg border border-slate-700 bg-slate-800/50 open:bg-slate-800"
+              className="border border-[#e8e8e4] bg-[#fafaf8] open:bg-white"
             >
-              <summary className="cursor-pointer px-3 py-2 flex items-center gap-2 flex-wrap">
-                <span className="text-slate-500">{formatTime(log.timestamp)}</span>
+              <summary className="cursor-pointer px-3 py-2 flex items-center gap-2 flex-wrap text-[12px]">
+                <span className="text-[#aaa] font-mono">{formatTime(log.timestamp)}</span>
                 <span
-                  className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
-                    log.error
-                      ? "bg-red-500/20 text-red-300"
-                      : log.status && log.status >= 400
-                        ? "bg-orange-500/20 text-orange-300"
-                        : "bg-emerald-500/20 text-emerald-300"
+                  className={`px-1 py-0.5 text-[10px] font-medium border ${
+                    failed
+                      ? "text-[#8b4513] bg-[#faf0e8] border-[#e8d4c4]"
+                      : "text-[#5c5c58] bg-[#f0f0ec] border-[#dcdcd8]"
                   }`}
                 >
                   {log.method}
                 </span>
-                <span className="text-indigo-300">{log.label}</span>
+                <span className="text-[#3d3d3a]">{log.label}</span>
                 {log.status != null && (
-                  <span className="text-slate-400">{log.status}</span>
+                  <span className="text-[#aaa]">{log.status}</span>
                 )}
                 {log.durationMs != null && (
-                  <span className="text-slate-500">{log.durationMs}ms</span>
+                  <span className="text-[#aaa]">{log.durationMs}ms</span>
                 )}
                 {mcpCalls.length > 0 && (
-                  <span className="text-cyan-400">{mcpCalls.length} MCP</span>
+                  <span className="text-[#8a8a86]">{mcpCalls.length} MCP</span>
                 )}
                 {otherEvents.length > 0 && (
-                  <span className="text-slate-500">{otherEvents.length} SSE</span>
+                  <span className="text-[#aaa]">{otherEvents.length} SSE</span>
                 )}
-                {log.error && <span className="text-red-400 truncate">{log.error}</span>}
+                {log.error && (
+                  <span className="text-[#8b4513] truncate">{log.error}</span>
+                )}
               </summary>
-              <div className="px-3 pb-3 space-y-2 border-t border-slate-700/50 pt-2">
+              <div className="px-3 pb-3 space-y-2 border-t border-[#e8e8e4] pt-2">
                 <div>
-                  <p className="text-slate-500 mb-1">URL</p>
-                  <pre className="whitespace-pre-wrap break-all text-slate-300">{log.url}</pre>
+                  <Label>URL</Label>
+                  <CodeBlock>{log.url}</CodeBlock>
                 </div>
                 {log.requestBody !== undefined && (
                   <div>
-                    <p className="text-slate-500 mb-1">Request Body</p>
-                    <pre className="whitespace-pre-wrap break-all text-slate-300 max-h-40 overflow-y-auto">
+                    <Label>Request Body</Label>
+                    <CodeBlock maxHeight="max-h-40">
                       {JSON.stringify(log.requestBody, null, 2)}
-                    </pre>
+                    </CodeBlock>
                   </div>
                 )}
                 {(log.status != null || log.statusText) && (
                   <div>
-                    <p className="text-slate-500 mb-1">Response</p>
-                    <pre className="whitespace-pre-wrap text-slate-300">
-                      {log.status} {log.statusText ?? ""}
-                    </pre>
+                    <Label>Response</Label>
+                    <CodeBlock>
+                      {`${log.status ?? ""} ${log.statusText ?? ""}`.trim()}
+                    </CodeBlock>
                   </div>
                 )}
                 {mcpCalls.length > 0 && (
                   <div>
-                    <p className="text-slate-500 mb-1">MCP 调用 ({mcpCalls.length})</p>
+                    <Label>MCP 调用 ({mcpCalls.length})</Label>
                     <div className="space-y-1.5">
                       {mcpCalls.map((call, i) => (
                         <McpCallBlock key={`${call.name}-${i}`} call={call} />
@@ -178,16 +211,16 @@ export function DebugLogPanel({ logs, onClear, onClose }: Props) {
                 )}
                 {otherEvents.length > 0 && (
                   <div>
-                    <p className="text-slate-500 mb-1">其他 SSE Events ({otherEvents.length})</p>
-                    <pre className="whitespace-pre-wrap break-all text-slate-300 max-h-48 overflow-y-auto">
+                    <Label>其他 SSE ({otherEvents.length})</Label>
+                    <CodeBlock maxHeight="max-h-48">
                       {JSON.stringify(otherEvents, null, 2)}
-                    </pre>
+                    </CodeBlock>
                   </div>
                 )}
                 {log.error && (
                   <div>
-                    <p className="text-red-400 mb-1">Error</p>
-                    <pre className="whitespace-pre-wrap break-all text-red-300">{log.error}</pre>
+                    <Label>Error</Label>
+                    <CodeBlock>{log.error}</CodeBlock>
                   </div>
                 )}
               </div>

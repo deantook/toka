@@ -7,7 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import { Dida365McpClient, type AppConfig } from "@toka/agent-core";
 import { AgentPipeline } from "./pipeline/pipeline.js";
-import { MemoryConversationStore } from "./store/memory.js";
+import { ConversationStore } from "./store/conversations.js";
 
 const PORT = Number(process.env.TOKA_AGENT_PORT ?? 17200);
 const PORT_FILE = path.join(os.tmpdir(), "toka-agent.port");
@@ -21,7 +21,7 @@ let config: AppConfig = {
 };
 
 const mcp = new Dida365McpClient(config);
-const store = new MemoryConversationStore();
+const store = new ConversationStore();
 const pipeline = new AgentPipeline(config, mcp, store);
 
 function applyConfig(partial: Partial<AppConfig>): AppConfig {
@@ -105,8 +105,23 @@ app.get("/api/tasks", async (c) => {
   }
 });
 
+app.get("/api/sessions", (c) => {
+  return c.json({ sessions: store.listSessions() });
+});
+
+app.post("/api/sessions", (c) => {
+  const session = store.createSession();
+  return c.json({ session });
+});
+
+app.delete("/api/sessions", (c) => {
+  store.clearAll();
+  return c.json({ ok: true });
+});
+
 app.get("/api/history/:sessionId", (c) => {
   const sessionId = c.req.param("sessionId");
+  store.ensureSession(sessionId);
   return c.json({ messages: store.getMessages(sessionId) });
 });
 

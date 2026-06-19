@@ -12,8 +12,9 @@ import {
 } from "@toka/agent-core";
 import { ROLE_TOOLS, composeSystemPrompt } from "@toka/agent-roles";
 import { runToolLoop } from "../llm/tool-loop.js";
-import { MemoryConversationStore } from "../store/memory.js";
+import { ConversationStore } from "../store/conversations.js";
 import { analyzeIntent } from "./analyzer.js";
+import { buildRuntimePrompt } from "./runtime-context.js";
 
 export class AgentPipeline {
   private contextEngine: ContextEngine;
@@ -21,7 +22,7 @@ export class AgentPipeline {
   constructor(
     private config: AppConfig,
     private mcp: Dida365McpClient,
-    private store: MemoryConversationStore,
+    private store: ConversationStore,
   ) {
     this.contextEngine = new ContextEngine(mcp);
   }
@@ -53,24 +54,34 @@ export class AgentPipeline {
   ): Promise<void> {
     const detachMcpLogging = onEvent ? this.attachMcpLogging(onEvent) : () => {};
     try {
-      if (!this.config.llmApiKey || !this.config.dida365Token) {
+      if (!this.config.dida365Token) {
         onEvent({
           type: "error",
-          message: "请先在设置中配置 LLM API Key 和滴答清单 Token",
+          message:
+            "尚未配置滴答清单 Token。请前往「设置」填写 Token（格式 dp_...，可在滴答清单 → 设置 → 开发者中获取）",
+        });
+        return;
+      }
+      if (!this.config.llmApiKey) {
+        onEvent({
+          type: "error",
+          message: "尚未配置 LLM API Key。请前往「设置」填写后再试",
         });
         return;
       }
 
       await this.mcp.connect();
 
+      this.store.ensureSession(sessionId);
+
       this.store.appendMessage(sessionId, { role: "user", content: userMessage });
 
       const analysis = await analyzeIntent(this.config, userMessage);
       const snapshot = await this.contextEngine.build(analysis, userMessage);
-      const contextPrompt = this.contextEngine.snapshotToPrompt(
-        snapshot,
-        analysis,
-      );
+      const contextPrompt = [
+        buildRuntimePrompt(this.config),
+        this.contextEngine.snapshotToPrompt(snapshot, analysis),
+      ].join("\n\n");
       const systemPrompt = composeSystemPrompt(
         analysis.role,
         contextPrompt,

@@ -15,6 +15,7 @@ interface SettingsPanelProps {
   save: () => void;
   testConnection: () => void;
   testResult: string | null;
+  onClose?: () => void;
 }
 
 export function SettingsPanel({
@@ -34,14 +35,23 @@ export function SettingsPanel({
   save,
   testConnection,
   testResult,
+  onClose,
 }: SettingsPanelProps) {
   return (
-    <div className="max-w-lg mx-auto bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-      <h2 className="text-lg font-semibold text-slate-800 mb-4">设置</h2>
-
-      <p className="mb-4 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
-        API Key 与 Token 保存在本地 settings.json 中。
-      </p>
+    <div className="p-5">
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-[15px] font-medium text-[#1c1c1a]">设置</h2>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-[#aaa] hover:text-[#5c5c58] text-lg leading-none px-1"
+            aria-label="关闭"
+          >
+            ×
+          </button>
+        )}
+      </div>
 
       <div className="space-y-4">
         <Field label="LLM Base URL">
@@ -49,7 +59,7 @@ export function SettingsPanel({
             type="url"
             value={llmBaseUrl}
             onChange={(e) => setLlmBaseUrl(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-mono"
+            className="field-input"
           />
         </Field>
 
@@ -58,8 +68,8 @@ export function SettingsPanel({
             type="text"
             value={llmModel}
             onChange={(e) => setLlmModel(e.target.value)}
-            placeholder="如 gpt-4o-mini"
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            placeholder="gpt-4o-mini"
+            className="field-input"
           />
         </Field>
 
@@ -69,7 +79,7 @@ export function SettingsPanel({
             value={llmApiKey}
             onChange={(e) => setLlmApiKey(e.target.value)}
             placeholder="sk-..."
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-mono"
+            className="field-input font-mono"
           />
         </Field>
 
@@ -78,7 +88,7 @@ export function SettingsPanel({
             type="url"
             value={dida365McpUrl}
             onChange={(e) => setDida365McpUrl(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-mono"
+            className="field-input font-mono"
           />
         </Field>
 
@@ -88,18 +98,18 @@ export function SettingsPanel({
             value={dida365Token}
             onChange={(e) => setDida365Token(e.target.value)}
             placeholder="dp_..."
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-mono"
+            className="field-input font-mono"
           />
         </Field>
 
-        <label className="flex items-center gap-3 cursor-pointer">
+        <label className="flex items-center gap-2.5 cursor-pointer pt-1">
           <input
             type="checkbox"
             checked={debugMode}
             onChange={(e) => setDebugMode(e.target.checked)}
-            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+            className="rounded border-[#ccc]"
           />
-          <span className="text-sm text-slate-700">调试模式（显示 MCP 请求日志）</span>
+          <span className="text-[13px] text-[#3d3d3a]">调试模式</span>
         </label>
 
         <div className="flex flex-wrap gap-2 pt-2">
@@ -107,21 +117,21 @@ export function SettingsPanel({
             type="button"
             onClick={save}
             disabled={saving}
-            className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg disabled:opacity-50 hover:bg-indigo-700"
+            className="px-4 py-1.5 text-[13px] bg-[#1c1c1a] text-[#fafaf8] hover:bg-[#3d3d3a] disabled:opacity-50 transition-colors"
           >
-            {saving ? "保存中..." : "保存并重启 Agent"}
+            {saving ? "保存中…" : "保存"}
           </button>
           <button
             type="button"
             onClick={testConnection}
-            className="px-4 py-2 border border-slate-200 text-slate-700 text-sm rounded-lg hover:bg-slate-50"
+            className="px-4 py-1.5 text-[13px] border border-[#dcdcd8] text-[#5c5c58] hover:bg-[#f0f0ec] transition-colors"
           >
-            测试滴答连接
+            测试连接
           </button>
         </div>
 
         {testResult && (
-          <p className="text-sm text-slate-600 bg-slate-50 rounded-lg px-3 py-2">
+          <p className="text-[12px] text-[#5c5c58] bg-[#f0f0ec] px-3 py-2 leading-relaxed">
             {testResult}
           </p>
         )}
@@ -139,7 +149,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="text-sm font-medium text-slate-700">{label}</span>
+      <span className="text-[12px] text-[#8a8a86]">{label}</span>
       <div className="mt-1">{children}</div>
     </label>
   );

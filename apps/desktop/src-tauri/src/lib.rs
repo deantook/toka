@@ -140,19 +140,14 @@ fn project_roots() -> Vec<std::path::PathBuf> {
     roots
 }
 
-fn resolve_agent_entry() -> Result<(std::path::PathBuf, std::path::PathBuf), String> {
+fn find_monorepo_root() -> Result<std::path::PathBuf, String> {
     for root in project_roots() {
-        let dist = root.join("packages/agent-runtime/dist/server.js");
-        if dist.exists() {
-            return Ok((root, dist));
-        }
-        let src = root.join("packages/agent-runtime/src/server.ts");
-        if src.exists() {
-            return Ok((root, src));
+        if root.join("packages/agent-runtime/package.json").exists() {
+            return Ok(root);
         }
     }
     Err(format!(
-        "找不到 agent 入口文件，已搜索: {}",
+        "找不到 monorepo 根目录，已搜索: {}",
         project_roots()
             .iter()
             .map(|p| p.display().to_string())
@@ -161,30 +156,77 @@ fn resolve_agent_entry() -> Result<(std::path::PathBuf, std::path::PathBuf), Str
     ))
 }
 
+fn agent_dist_entry(project_root: &std::path::Path) -> std::path::PathBuf {
+    project_root.join("packages/agent-runtime/dist/server.js")
+}
+
+fn agent_runtime_src_is_newer(project_root: &std::path::Path) -> bool {
+    let dist = agent_dist_entry(project_root);
+    let src_root = project_root.join("packages/agent-runtime/src");
+    let Ok(dist_mtime) = dist.metadata().and_then(|m| m.modified()) else {
+        return true;
+    };
+
+    let mut stack = vec![src_root];
+    while let Some(dir) = stack.pop() {
+        let Ok(read_dir) = std::fs::read_dir(&dir) else {
+            continue;
+        };
+        for entry in read_dir.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+                continue;
+            }
+            if path.extension().and_then(|ext| ext.to_str()) != Some("ts") {
+                continue;
+            }
+            if let Ok(source_mtime) = entry.metadata().and_then(|m| m.modified()) {
+                if source_mtime > dist_mtime {
+                    return true;
+                }
+            }
+        }
+    }
+    false
+}
+
+fn ensure_agent_built(project_root: &std::path::Path) -> Result<std::path::PathBuf, String> {
+    let dist = agent_dist_entry(project_root);
+    let needs_build = !dist.exists()
+        || (cfg!(debug_assertions) && agent_runtime_src_is_newer(project_root));
+    if !needs_build {
+        return Ok(dist);
+    }
+
+    let status = Command::new("pnpm")
+        .args(["agent:build"])
+        .current_dir(project_root)
+        .status()
+        .map_err(|e| format!("构建 agent 失败: {e}"))?;
+
+    if !status.success() {
+        return Err("agent 构建失败，请在终端运行: pnpm agent:build".into());
+    }
+    if !dist.exists() {
+        return Err(format!(
+            "agent 构建完成但未找到 {}",
+            dist.display()
+        ));
+    }
+    Ok(dist)
+}
+
 fn spawn_sidecar(app: &tauri::AppHandle, state: &SidecarState) -> Result<(), String> {
     kill_process_on_port(AGENT_PORT);
 
     let settings = normalize_settings(load_settings(app)?);
 
-    let (project_root, agent_path) = resolve_agent_entry()?;
-    let is_dist = agent_path.extension().is_some_and(|e| e == "js");
+    let project_root = find_monorepo_root()?;
+    let agent_path = ensure_agent_built(&project_root)?;
 
-    let mut cmd = if is_dist {
-        let mut c = Command::new("node");
-        c.arg(&agent_path);
-        c
-    } else {
-        let tsx = project_root.join("node_modules/.bin/tsx");
-        if tsx.exists() {
-            let mut c = Command::new(tsx);
-            c.arg(&agent_path);
-            c
-        } else {
-            let mut c = Command::new("pnpm");
-            c.args(["exec", "tsx", agent_path.to_string_lossy().as_ref()]);
-            c
-        }
-    };
+    let mut cmd = Command::new("node");
+    cmd.arg(&agent_path);
 
     cmd.current_dir(&project_root);
     cmd.env("TOKA_AGENT_PORT", AGENT_PORT);
@@ -249,7 +291,9 @@ pub fn run() {
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 let state = handle.state::<SidecarState>();
-                let _ = start_sidecar(handle.clone(), state).await;
+                if let Err(err) = start_sidecar(handle.clone(), state).await {
+                    eprintln!("Toka agent sidecar 启动失败: {err}");
+                }
             });
             Ok(())
         })

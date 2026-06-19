@@ -6,6 +6,7 @@ export {
   type McpCallObserver,
 } from "./mcp/client.js";
 export {
+  normalizeToolArguments,
   normalizeToolListResult,
   parseMcpToolContent,
 } from "./mcp/normalize.js";

@@ -2,7 +2,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { AppConfig } from "../types.js";
 import { MVP_TOOLS } from "../types.js";
-import { parseMcpToolContent } from "./normalize.js";
+import { normalizeToolArguments, parseMcpToolContent } from "./normalize.js";
 
 export interface McpCallLog {
   name: string;
@@ -114,16 +114,17 @@ export class Dida365McpClient {
     retries = 2,
   ): Promise<unknown> {
     const started = performance.now();
+    const normalizedArgs = normalizeToolArguments(name, args);
     const request = {
       method: "tools/call" as const,
       name,
-      arguments: args,
+      arguments: normalizedArgs,
     };
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt <= retries; attempt += 1) {
       try {
-        const { parsed, raw } = await this.callToolOnce(name, args);
+        const { parsed, raw } = await this.callToolOnce(name, normalizedArgs);
         this.callObserver?.({
           name,
           mcpUrl: this.mcpUrl(),

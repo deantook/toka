@@ -6,8 +6,11 @@ import {
   inferRoleHeuristic,
   isTaskListQuery,
 } from "../pipeline/analyzer.js";
-import { MemoryConversationStore } from "../store/memory.js";
+import os from "node:os";
+import path from "node:path";
+import { ConversationStore } from "../store/conversations.js";
 import { AgentPipeline } from "../pipeline/pipeline.js";
+import { buildRuntimePrompt } from "../pipeline/runtime-context.js";
 
 assert(isTaskListQuery("今天做什么"), "today task list query");
 assert(isTaskListQuery("我今天有哪些任务"), "explicit task list query");
@@ -38,11 +41,25 @@ assert.equal(fallback.intent, "query");
 assert.equal(fallback.role, "scheduler");
 assert.deepEqual(fallback.contextNeeded, ["projects", "dateRange"]);
 
-const store = new MemoryConversationStore();
+assert.match(buildRuntimePrompt(emptyConfig), /LLM 模型：test/);
+assert.match(buildRuntimePrompt(emptyConfig), /不要称「系统提示未说明」/);
+
+const storePath = path.join(os.tmpdir(), `toka-test-${Date.now()}.json`);
+const store = new ConversationStore(storePath);
 store.appendMessage("s1", { role: "user", content: "hi" });
 assert.equal(store.getMessages("s1").length, 1);
 store.clear("s1");
 assert.equal(store.getMessages("s1").length, 0);
+
+store.createSession();
+store.createSession();
+assert.equal(store.listSessions().length, 2);
+store.clearAll();
+assert.equal(store.listSessions().length, 0);
+
+const created = store.createSession();
+assert.ok(created.id);
+assert.equal(store.listSessions().length, 1);
 
 const mockMcp = {
   updateConfig: () => {},
@@ -53,13 +70,17 @@ const mockMcp = {
   getOpenAiTools: () => [],
 };
 
-const pipeline = new AgentPipeline(emptyConfig, mockMcp as never, store);
+const pipeline = new AgentPipeline(
+  { ...emptyConfig, dida365Token: "dp_test" },
+  mockMcp as never,
+  store,
+);
 const events: Array<{ type: string; message?: string }> = [];
 await pipeline.run("s2", "hello", (event) => {
   events.push(event);
 });
 assert.equal(events.length, 1);
 assert.equal(events[0]?.type, "error");
-assert.match(events[0]?.message ?? "", /LLM API Key/);
+assert.match(events[0]?.message ?? "", /LLM API Key|API Key/);
 
 console.log("pipeline.test.ts: all assertions passed");

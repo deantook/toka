@@ -45,20 +45,17 @@ export interface RequestLogEntry {
   error?: string;
 }
 
+export interface SessionMeta {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AppCredentials {
   llmApiKey: string;
   dida365Token: string;
   llmBaseUrl: string;
   llmModel: string;
   dida365McpUrl: string;
-}
-
-export interface ScheduleTask {
-  id: string;
-  title: string;
-  projectId?: string;
-  startDate?: string;
-  dueDate?: string;
-  priority?: number;
-  status?: number;
 }

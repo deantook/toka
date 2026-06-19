@@ -60,7 +60,9 @@ export class ContextEngine {
       try {
         const keyword = analysis.entities.keywords?.[0];
         if (keyword) {
-          const found = await this.mcp.callTool("search_task", { keyword });
+          const found = await this.mcp.callTool("search_task", {
+            query: keyword,
+          });
           matchedTasks = normalizeToolListResult(found) as TaskSummary[];
         } else {
           const filter = await this.mcp.callTool("filter_tasks", {

@@ -1,110 +1,133 @@
-import { useRef, useState } from "react";
-import { ChatPanel, type ChatPanelHandle } from "./components/Chat/ChatPanel";
+import { useCallback, useState } from "react";
+import { ChatHistorySidebar } from "./components/Chat/ChatHistorySidebar";
+import { SidebarFooter } from "./components/Chat/SidebarFooter";
+import { ChatPanel } from "./components/Chat/ChatPanel";
 import { DebugLogPanel } from "./components/Chat/DebugLogPanel";
-import { ScheduleView } from "./components/Schedule/ScheduleView";
 import { SettingsPanel } from "./components/Settings/SettingsPanel";
 import { useAgent } from "./hooks/useAgent";
 import { useSettings } from "./hooks/useSettings";
 
-type Tab = "chat" | "settings";
+const SIDEBAR_COLLAPSED_KEY = "toka:sidebar-collapsed";
+
+function readSidebarCollapsed(): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
 
 function App() {
-  const [tab, setTab] = useState<Tab>("chat");
-  const chatRef = useRef<ChatPanelHandle>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarCollapsed);
   const settings = useSettings();
   const {
     messages,
     streaming,
+    sessions,
+    currentSessionId,
     requestLogs,
-    refreshKey,
     sendMessage,
-    clearHistory,
+    switchSession,
+    startNewSession,
+    deleteSession,
+    clearAllSessions,
     clearRequestLogs,
-    agentUrl,
-  } = useAgent({ debugMode: settings.debugMode });
+    configReady,
+    missingDidaToken,
+    missingLlmKey,
+  } = useAgent({
+    debugMode: settings.debugMode,
+    hasDidaToken: Boolean(settings.dida365Token.trim()),
+    hasLlmKey: Boolean(settings.llmApiKey.trim()),
+  });
 
-  const handleTaskClick = (task: { id: string; title: string }) => {
-    chatRef.current?.setInput(`关于任务『${task.title}』`);
-  };
+  const setSidebarOpen = useCallback((open: boolean) => {
+    setSidebarCollapsed(!open);
+    try {
+      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(!open));
+    } catch {
+      // ignore storage errors
+    }
+  }, []);
 
   return (
-    <div className="h-screen flex flex-col bg-slate-50">
-      <header className="shrink-0 bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
-            T
-          </div>
-          <h1 className="font-semibold text-slate-800">Toka · 滴答清单 Agent</h1>
+    <div className="h-screen flex bg-[#f7f7f5] text-[#1c1c1a]">
+      <aside
+        className={`shrink-0 flex flex-col h-full border-r border-[#e8e8e4] bg-[#f0f0ec] overflow-hidden transition-[width] duration-200 ease-out ${
+          sidebarCollapsed ? "w-7" : "w-52"
+        }`}
+      >
+        <div className="flex-1 min-h-0 overflow-hidden">
+          {!sidebarCollapsed && (
+            <ChatHistorySidebar
+              sessions={sessions}
+              currentSessionId={currentSessionId}
+              streaming={streaming}
+              onSelect={switchSession}
+              onNew={startNewSession}
+              onDelete={deleteSession}
+              onClearAll={clearAllSessions}
+            />
+          )}
         </div>
-        <nav className="flex gap-1 bg-slate-100 rounded-lg p-1">
-          {(
-            [
-              ["chat", "对话"],
-              ["settings", "设置"],
-            ] as const
-          ).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setTab(id)}
-              className={`px-4 py-1.5 text-sm rounded-md transition-colors ${
-                tab === id
-                  ? "bg-white text-indigo-600 shadow-sm font-medium"
-                  : "text-slate-600 hover:text-slate-800"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
-      </header>
+        <SidebarFooter
+          collapsed={sidebarCollapsed}
+          onOpenSettings={() => setSettingsOpen(true)}
+          onToggleSidebar={() => setSidebarOpen(sidebarCollapsed)}
+        />
+      </aside>
 
-      <main className="flex-1 p-4 min-h-0">
-        {tab === "chat" && (
-          <div
-            className={`h-full flex gap-4 min-h-0 ${
-              settings.debugMode ? "max-w-7xl mx-auto" : ""
-            }`}
-          >
-            <div className="w-[55%] min-w-0 flex flex-col min-h-0">
-              <ChatPanel
-                ref={chatRef}
-                messages={messages}
-                streaming={streaming}
-                debugMode={settings.debugMode}
-                onSend={sendMessage}
-                onClear={clearHistory}
+      <div className="flex-1 flex min-w-0 min-h-0">
+        <main className="flex-1 flex flex-col min-w-0 min-h-0">
+          <ChatPanel
+            messages={messages}
+            streaming={streaming}
+            debugMode={settings.debugMode}
+            configReady={configReady}
+            missingDidaToken={missingDidaToken}
+            missingLlmKey={missingLlmKey}
+            onOpenSettings={() => setSettingsOpen(true)}
+            onSend={sendMessage}
+          />
+          {settings.debugMode && (
+            <div className="shrink-0 h-48 border-t border-[#e8e8e4] xl:hidden">
+              <DebugLogPanel
+                logs={requestLogs}
+                onClear={clearRequestLogs}
+                onClose={() => settings.setDebugMode(false)}
               />
             </div>
-            <div className="w-[45%] min-w-0 flex flex-col min-h-0">
-              <ScheduleView
-                agentUrl={agentUrl}
-                refreshKey={refreshKey}
-                onTaskClick={handleTaskClick}
-              />
-            </div>
-            {settings.debugMode && (
-              <div className="w-[380px] shrink-0 min-h-0 hidden xl:block">
-                <DebugLogPanel
-                  logs={requestLogs}
-                  onClear={clearRequestLogs}
-                  onClose={() => settings.setDebugMode(false)}
-                />
-              </div>
-            )}
-          </div>
-        )}
-        {settings.debugMode && tab === "chat" && (
-          <div className="mt-4 max-w-7xl mx-auto xl:hidden h-64 min-h-0">
+          )}
+        </main>
+
+        {settings.debugMode && (
+          <aside className="hidden xl:flex w-80 shrink-0 border-l border-[#e8e8e4] min-h-0">
             <DebugLogPanel
               logs={requestLogs}
               onClear={clearRequestLogs}
               onClose={() => settings.setDebugMode(false)}
             />
-          </div>
+          </aside>
         )}
-        {tab === "settings" && <SettingsPanel {...settings} />}
-      </main>
+      </div>
+
+      {settingsOpen && (
+        <div
+          className="fixed inset-0 z-30 flex items-center justify-center bg-black/20"
+          onClick={() => setSettingsOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-md mx-4 max-h-[85vh] overflow-y-auto bg-[#fafaf8] border border-[#dcdcd8] shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <SettingsPanel
+              {...settings}
+              onClose={() => setSettingsOpen(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

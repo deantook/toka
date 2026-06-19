@@ -16,7 +16,7 @@ export function MarkdownContent({ content, variant }: Props) {
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className={isUser ? "underline text-white/95" : "text-indigo-600 underline"}
+        className={isUser ? "underline text-white/95" : "text-[#5c5c58] underline underline-offset-2"}
       >
         {children}
       </a>

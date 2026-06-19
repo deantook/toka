@@ -5,6 +5,32 @@ import { DEFAULT_AGENT_URL } from "../types";
 
 const DEBUG_STORAGE_KEY = "toka:debug";
 
+async function waitForAgentHealth(agentUrl: string, attempts = 8): Promise<boolean> {
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      const res = await fetch(`${agentUrl}/health`, {
+        signal: AbortSignal.timeout(1500),
+      });
+      if (res.ok) return true;
+    } catch {
+      // sidecar still starting
+    }
+    await new Promise((r) => setTimeout(r, 400));
+  }
+  return false;
+}
+
+async function ensureAgentReady(agentUrl: string): Promise<void> {
+  if (await waitForAgentHealth(agentUrl, 2)) return;
+
+  await invoke("restart_sidecar");
+  if (await waitForAgentHealth(agentUrl)) return;
+
+  throw new Error(
+    "Agent 服务未启动（127.0.0.1:17200）。请关闭应用后重新打开，或在终端运行 pnpm agent:build",
+  );
+}
+
 function readDebugMode(): boolean {
   try {
     return localStorage.getItem(DEBUG_STORAGE_KEY) === "true";
@@ -60,6 +86,8 @@ export function useSettings() {
         dida365McpUrl,
       });
 
+      await ensureAgentReady(agentUrl);
+
       const configRes = await fetch(`${agentUrl}/api/config`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -94,6 +122,7 @@ export function useSettings() {
   const testConnection = async () => {
     setTestResult(null);
     try {
+      await ensureAgentReady(agentUrl);
       const res = await fetch(`${agentUrl}/api/config/test`, { method: "POST" });
       const data = (await res.json()) as { ok: boolean; message: string };
       setTestResult(data.message);
