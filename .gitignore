@@ -6,4 +6,6 @@ target/
 *.port
 .DS_Store
 apps/desktop/dist/
+apps/desktop/src-tauri/binaries/
+.bun/
 .worktrees/

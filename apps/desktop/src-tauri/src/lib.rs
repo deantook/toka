@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 use tauri::{Manager, State};
+use tauri_plugin_shell::process::CommandChild;
+use tauri_plugin_shell::ShellExt;
 use tauri_plugin_store::StoreExt;
 
 const AGENT_PORT: &str = "17200";
@@ -31,14 +33,44 @@ pub struct CredentialsPublic {
     pub dida365_mcp_url: String,
 }
 
-pub struct SidecarState(Mutex<Option<Child>>);
+enum ManagedSidecar {
+    Node(Child),
+    Binary(CommandChild),
+}
 
+impl ManagedSidecar {
+    fn kill(self) {
+        match self {
+            ManagedSidecar::Node(mut child) => {
+                let _ = child.kill();
+            }
+            ManagedSidecar::Binary(child) => {
+                let _ = child.kill();
+            }
+        }
+    }
+}
+
+pub struct SidecarState(Mutex<Option<ManagedSidecar>>);
+
+#[cfg(unix)]
 fn kill_process_on_port(port: &str) {
     let _ = Command::new("sh")
         .args([
             "-c",
             &format!("lsof -ti:{port} | xargs kill -9 2>/dev/null || true"),
         ])
+        .status();
+}
+
+#[cfg(windows)]
+fn kill_process_on_port(port: &str) {
+    let script = format!(
+        "Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | \
+         ForEach-Object {{ Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }}"
+    );
+    let _ = Command::new("powershell")
+        .args(["-NoProfile", "-Command", &script])
         .status();
 }
 
@@ -217,17 +249,28 @@ fn ensure_agent_built(project_root: &std::path::Path) -> Result<std::path::PathB
     Ok(dist)
 }
 
-fn spawn_sidecar(app: &tauri::AppHandle, state: &SidecarState) -> Result<(), String> {
-    kill_process_on_port(AGENT_PORT);
+fn apply_sidecar_env(
+    settings: &AppSettings,
+    command: tauri_plugin_shell::process::Command,
+) -> tauri_plugin_shell::process::Command {
+    command
+        .env("TOKA_AGENT_PORT", AGENT_PORT)
+        .env("LLM_BASE_URL", &settings.llm_base_url)
+        .env("LLM_MODEL", &settings.llm_model)
+        .env("LLM_API_KEY", &settings.llm_api_key)
+        .env("DIDA365_TOKEN", &settings.dida365_token)
+        .env("DIDA365_MCP_URL", &settings.dida365_mcp_url)
+}
 
-    let settings = normalize_settings(load_settings(app)?);
-
+fn spawn_dev_sidecar(
+    _app: &tauri::AppHandle,
+    settings: &AppSettings,
+) -> Result<ManagedSidecar, String> {
     let project_root = find_monorepo_root()?;
     let agent_path = ensure_agent_built(&project_root)?;
 
     let mut cmd = Command::new("node");
     cmd.arg(&agent_path);
-
     cmd.current_dir(&project_root);
     cmd.env("TOKA_AGENT_PORT", AGENT_PORT);
     cmd.env("LLM_BASE_URL", &settings.llm_base_url);
@@ -239,12 +282,38 @@ fn spawn_sidecar(app: &tauri::AppHandle, state: &SidecarState) -> Result<(), Str
     cmd.stderr(Stdio::piped());
 
     let child = cmd.spawn().map_err(|e| format!("启动 sidecar 失败: {e}"))?;
+    Ok(ManagedSidecar::Node(child))
+}
+
+fn spawn_release_sidecar(
+    app: &tauri::AppHandle,
+    settings: &AppSettings,
+) -> Result<ManagedSidecar, String> {
+    let sidecar = app
+        .shell()
+        .sidecar("agent")
+        .map_err(|e| format!("定位 agent sidecar 失败: {e}"))?;
+    let (_rx, child) = apply_sidecar_env(settings, sidecar)
+        .spawn()
+        .map_err(|e| format!("启动 agent sidecar 失败: {e}"))?;
+    Ok(ManagedSidecar::Binary(child))
+}
+
+fn spawn_sidecar(app: &tauri::AppHandle, state: &SidecarState) -> Result<(), String> {
+    kill_process_on_port(AGENT_PORT);
+
+    let settings = normalize_settings(load_settings(app)?);
+    let managed = if cfg!(debug_assertions) {
+        spawn_dev_sidecar(app, &settings)?
+    } else {
+        spawn_release_sidecar(app, &settings)?
+    };
 
     let mut guard = state.0.lock().map_err(|e| e.to_string())?;
-    if let Some(mut old) = guard.take() {
-        let _ = old.kill();
+    if let Some(old) = guard.take() {
+        old.kill();
     }
-    *guard = Some(child);
+    *guard = Some(managed);
     Ok(())
 }
 
@@ -265,8 +334,8 @@ async fn restart_sidecar(
 ) -> Result<String, String> {
     {
         let mut guard = state.0.lock().map_err(|e| e.to_string())?;
-        if let Some(mut child) = guard.take() {
-            let _ = child.kill();
+        if let Some(child) = guard.take() {
+            child.kill();
         }
     }
     spawn_sidecar(&app, &state)?;
@@ -278,6 +347,7 @@ async fn restart_sidecar(
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .manage(SidecarState(Mutex::new(None)))
         .invoke_handler(tauri::generate_handler![

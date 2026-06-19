@@ -6,7 +6,7 @@
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1430",
-    "beforeBuildCommand": "pnpm build",
+    "beforeBuildCommand": "pnpm agent:bundle && pnpm --filter @toka/desktop build",
     "frontendDist": "../dist"
   },
   "app": {
@@ -26,6 +26,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "externalBin": ["binaries/agent"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

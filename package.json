@@ -8,7 +8,11 @@
     "build": "pnpm --filter @toka/desktop build",
     "agent:dev": "pnpm agent:build && pnpm --filter @toka/agent-runtime dev",
     "agent:build": "pnpm --filter @toka/agent-core build && pnpm --filter @toka/agent-roles build && pnpm --filter @toka/agent-runtime build",
+    "agent:bundle": "pnpm agent:build && node scripts/build-agent-sidecar.mjs",
     "test": "pnpm --filter @toka/agent-core test && pnpm --filter @toka/agent-runtime test",
     "postinstall": "pnpm agent:build"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.5"
   }
 }
