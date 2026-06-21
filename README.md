@@ -52,10 +52,10 @@ pnpm agent:dev
 pnpm test
 ```
 
-构建 sidecar 产物：
+构建 sidecar 原生二进制（`pnpm dev` 会在缺失时自动执行）：
 
 ```bash
-pnpm agent:build
+pnpm agent:bundle
 ```
 
 Sidecar 端口可通过环境变量 `TOKA_AGENT_PORT` 覆盖（默认 `17200`）。
